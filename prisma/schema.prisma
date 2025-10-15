@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+
+// Order model for future persistence (MVP will not use this yet)
+model Order {
+  // MongoDB uses a special ID setup:
+  // @map("_id") maps the field 'id' to the default MongoDB '_id' field.
+  // @db.ObjectId specifies the native database type is MongoDB's ObjectId.
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId 
+  
+  restaurantName  String    @default("Tatli Restaurant")
+  createdAt       DateTime  @default(now())
+  
+  subtotal        Float
+  tax             Float
+  grandTotal      Float
+  
+  // Storing order items as JSON-like structure (BSON)
+  items           Json 
+
+  status          String    @default("pending")
+  
+  @@map("orders") // The name of the collection in MongoDB
+}

@@ -1,103 +1,115 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState, useCallback, useMemo } from "react";
+import { nanoid } from "nanoid"; // Used for unique keys for order items
+import MenuList from "@/components/MenuList";
+import OrderDrawer from "@/components/OrderDrawer";
+
+// Calculate totals including a fixed tax rate
+const TAX_RATE = 0.05; // 5%
+
+function calculateOrderTotals(items) {
+  const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+  const tax = subtotal * TAX_RATE;
+  const grandTotal = subtotal + tax;
+  return { subtotal, tax, grandTotal };
+}
+
+export default function HomePage() {
+  // orderItems state structure:
+  // [{ key: 'unique-id', id: 1, name: 'Zinger Burger', rate: 350, quantity: 2, total: 700 }]
+  const [orderItems, setOrderItems] = useState([]);
+
+  // Memoized function for calculating totals
+  const orderTotals = useMemo(
+    () => calculateOrderTotals(orderItems),
+    [orderItems]
+  );
+
+  // Handler for adding a new item or increasing quantity
+  const onAddItem = useCallback((newItem) => {
+    setOrderItems((prevItems) => {
+      // Look for an existing item with the same ID and rate.
+      // This is crucial for grouping identical items in the cart.
+      const existingItemIndex = prevItems.findIndex(
+        (item) => item.id === newItem.id && item.rate === newItem.rate
+      );
+
+      if (existingItemIndex > -1) {
+        // Case 1: Item found, increase quantity
+        const updatedItems = [...prevItems];
+        const existingItem = updatedItems[existingItemIndex];
+        const newQuantity = existingItem.quantity + 1;
+
+        updatedItems[existingItemIndex] = {
+          ...existingItem,
+          quantity: newQuantity,
+          total: newQuantity * existingItem.rate,
+        };
+        return updatedItems;
+      } else {
+        // Case 2: New item, add it with quantity 1
+        const itemWithTotal = {
+          ...newItem,
+          key: nanoid(), // Unique key for list rendering and manipulation
+          quantity: 1,
+          total: newItem.rate * 1,
+        };
+        return [...prevItems, itemWithTotal];
+      }
+    });
+  }, []);
+
+  // Handler for updating quantity or removing items
+  const onUpdateQuantity = useCallback((key, newQuantity) => {
+    setOrderItems((prevItems) => {
+      if (newQuantity <= 0) {
+        // Remove item if the user sets quantity to 0 or less
+        return prevItems.filter((item) => item.key !== key);
+      }
+
+      const updatedItems = prevItems.map((item) => {
+        if (item.key === key) {
+          return {
+            ...item,
+            quantity: newQuantity,
+            total: newQuantity * item.rate,
+          };
+        }
+        return item;
+      });
+
+      return updatedItems;
+    });
+  }, []);
+
+  // Handler for clearing the entire order
+  const onClearOrder = useCallback(() => {
+    setOrderItems([]);
+  }, []);
+
+  const orderData = {
+    items: orderItems,
+    ...orderTotals,
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex min-h-screen">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <h1 className="text-4xl font-extrabold mb-8 text-primary">
+          Tatli Order System (MVP)
+        </h1>
+        <div className="max-w-4xl">
+          <MenuList onAddItem={onAddItem} />
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      {/* Order Drawer (Cart) component, fixed at bottom right */}
+      <OrderDrawer
+        order={orderData}
+        onUpdateQuantity={onUpdateQuantity}
+        onClearOrder={onClearOrder}
+      />
     </div>
   );
 }
