@@ -14,26 +14,22 @@ import {
 
 export default function PrintPage() {
   const [order, setOrder] = useState(null);
+  const [dateTime, setDateTime] = useState(new Date());
 
   useEffect(() => {
-    // 1. Load data from sessionStorage
     const storedOrder = sessionStorage.getItem("currentOrder");
     if (storedOrder) {
       const parsedOrder = JSON.parse(storedOrder);
       setOrder(parsedOrder);
     }
 
-    // 2. Trigger print dialog after component mounts and data is loaded
-    // Use a small timeout to ensure the DOM has fully updated after state change
     const printTimer = setTimeout(() => {
       if (storedOrder) {
         window.print();
-        // Optional: clear the session storage item after printing is initiated
         sessionStorage.removeItem("currentOrder");
       }
     }, 500);
 
-    // Cleanup timer on unmount
     return () => {
       clearTimeout(printTimer);
     };
@@ -44,17 +40,17 @@ export default function PrintPage() {
       <div className="p-8 text-center bg-background text-foreground">
         <h1 className="text-2xl font-bold">Error Loading Order</h1>
         <p className="mt-2">
-          Please go back to the main page and click 'Print Slip' again.
+          Please go back to the main page and click &apos;Print Slip&apos;
+          again.
         </p>
       </div>
     );
   }
 
+  // --- Print Slip Layout (58mm Thermal Friendly) ---
+
   const PrintLayout = (
-    // The main container for the receipt. The globals.css media query targets this class
-    // to apply 58mm sizing and monospace font only for printing.
-    <div className="print-only-container p-4">
-      {/* Header Section */}
+    <div className="print-only-container p-2">
       <header className="text-center mb-3">
         <h1 className="font-bold text-lg leading-tight">TATLI RESTAURANT</h1>
         <p className="text-xs">Order Slip</p>
@@ -72,37 +68,59 @@ export default function PrintPage() {
           <Table className="w-full text-left">
             <TableHeader>
               <TableRow className="border-b border-black">
-                <TableHead className="py-1 px-0 font-bold text-left">
+                <TableHead className="py-1 px-0 font-bold text-left w-1/12">
                   QTY
                 </TableHead>
-                <TableHead className="py-1 px-1 font-bold">ITEM</TableHead>
-                <TableHead className="py-1 px-0 text-right font-bold">
+                <TableHead className="py-1 px-1 font-bold w-6/12">
+                  ITEM
+                </TableHead>
+                <TableHead className="py-1 px-0 text-right font-bold w-3/12">
                   RATE
                 </TableHead>
-                <TableHead className="py-1 px-0 text-right font-bold">
+                <TableHead className="py-1 px-0 text-right font-bold w-2/12">
                   TOTAL
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {order.items.map((item, index) => (
-                <TableRow
-                  key={item.key || index}
-                  className="border-b border-dashed border-gray-400 h-auto"
-                >
-                  <TableCell className="py-0.5 px-0 text-left">
-                    {item.quantity}
-                  </TableCell>
-                  <TableCell className="py-0.5 px-1 whitespace-normal max-w-[100px]">
-                    {item.name}
-                  </TableCell>
-                  <TableCell className="py-0.5 px-0 text-right">
-                    {formatCurrency(item.rate)}
-                  </TableCell>
-                  <TableCell className="py-0.5 px-0 text-right">
-                    {formatCurrency(item.total)}
-                  </TableCell>
-                </TableRow>
+                <React.Fragment key={item.key || index}>
+                  {/* Base Item Row */}
+                  <TableRow className="border-b border-dashed border-gray-400 h-auto font-bold">
+                    <TableCell className="py-0.5 px-0 text-left">
+                      {item.quantity}
+                    </TableCell>
+                    <TableCell className="py-0.5 px-1 whitespace-normal max-w-[100px]">
+                      {item.name}
+                    </TableCell>
+                    <TableCell className="py-0.5 px-0 text-right">
+                      {formatCurrency(item.baseRate || item.rate)}
+                    </TableCell>
+                    <TableCell className="py-0.5 px-0 text-right">
+                      {formatCurrency(item.total)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Nested Addon Rows */}
+                  {item.addons &&
+                    item.addons.map((addon) => (
+                      <TableRow
+                        key={`${item.key}-${addon.id}-print`}
+                        className="h-auto"
+                      >
+                        <TableCell className="py-0.5 px-0 text-left"></TableCell>
+                        <TableCell className="py-0.5 pl-4 px-1 text-xs italic whitespace-normal">
+                          + {addon.quantity}x {addon.name}
+                        </TableCell>
+                        <TableCell className="py-0.5 px-0 text-right text-xs">
+                          {formatCurrency(addon.rate)}
+                        </TableCell>
+                        <TableCell className="py-0.5 px-0 text-right text-xs">
+                          {formatCurrency(addon.total * item.quantity)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>
@@ -112,11 +130,11 @@ export default function PrintPage() {
       {/* Footer / Totals Section */}
       <footer className="mt-4 text-right space-y-1">
         <div className="flex justify-between">
-          <span>Subtotal:</span>
+          <span>SUBTOTAL:</span>
           <span>{formatCurrency(order.subtotal)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span>Tax (5%):</span>
+          <span>TAX:</span>
           <span>{formatCurrency(order.tax)}</span>
         </div>
         <hr className="my-1 border-black border-t-[1.5px]" />
@@ -133,9 +151,6 @@ export default function PrintPage() {
 
   return (
     <>
-      {/* This is the non-print view, displayed in the browser window
-        when the print page is opened. It gives context before the print dialog appears.
-      */}
       <div className="p-8 bg-background text-foreground">
         <h1 className="text-2xl font-bold mb-4">
           Print Preview (Ready for 58mm)
@@ -151,7 +166,6 @@ export default function PrintPage() {
         </p>
       </div>
 
-      {/* The actual component rendered, which the media query targets for printing */}
       <div className="hidden print-only-container">{PrintLayout}</div>
     </>
   );

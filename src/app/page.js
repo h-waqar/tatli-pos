@@ -1,9 +1,25 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import { nanoid } from "nanoid"; // Used for unique keys for order items
+import { nanoid } from "nanoid";
 import MenuList from "@/components/MenuList";
 import OrderDrawer from "@/components/OrderDrawer";
+
+// Utility to create a stable key for grouping identical customized items.
+// This is essential for preventing two identical customizations from becoming unique line items.
+function createItemKey(item) {
+  let key = `${item.id}-${item.rate}`;
+
+  // Sort addons by ID to ensure order doesn't affect the key
+  if (item.addons && item.addons.length > 0) {
+    const addonString = item.addons
+      .map((a) => `${a.id}:${a.quantity}`)
+      .sort()
+      .join(";");
+    key += `-${addonString}`;
+  }
+  return key;
+}
 
 // Calculate totals including a fixed tax rate
 const TAX_RATE = 0.05; // 5%
@@ -16,27 +32,21 @@ function calculateOrderTotals(items) {
 }
 
 export default function HomePage() {
-  // orderItems state structure:
-  // [{ key: 'unique-id', id: 1, name: 'Zinger Burger', rate: 350, quantity: 2, total: 700 }]
   const [orderItems, setOrderItems] = useState([]);
 
-  // Memoized function for calculating totals
-  const orderTotals = useMemo(
-    () => calculateOrderTotals(orderItems),
-    [orderItems]
-  );
-
-  // Handler for adding a new item or increasing quantity
+  // Handler for adding a new item or increasing quantity (used for both menu items and addons)
   const onAddItem = useCallback((newItem) => {
+    // 1. Generate a unique key that represents the base item + ALL its customizations
+    const groupingKey = createItemKey(newItem);
+
     setOrderItems((prevItems) => {
-      // Look for an existing item with the same ID and rate.
-      // This is crucial for grouping identical items in the cart.
+      // 2. Look for an existing item with the exact same grouping key
       const existingItemIndex = prevItems.findIndex(
-        (item) => item.id === newItem.id && item.rate === newItem.rate
+        (item) => item.groupingKey === groupingKey
       );
 
       if (existingItemIndex > -1) {
-        // Case 1: Item found, increase quantity
+        // Case 1: Item with this exact customization found, increase quantity
         const updatedItems = [...prevItems];
         const existingItem = updatedItems[existingItemIndex];
         const newQuantity = existingItem.quantity + 1;
@@ -44,27 +54,28 @@ export default function HomePage() {
         updatedItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
-          total: newQuantity * existingItem.rate,
+          // The item rate already includes addon costs, so total = rate * newQuantity
+          total: existingItem.rate * newQuantity,
         };
         return updatedItems;
       } else {
-        // Case 2: New item, add it with quantity 1
-        const itemWithTotal = {
+        // Case 2: New unique item (new base item or new customization), add it
+        const itemWithKeys = {
           ...newItem,
-          key: nanoid(), // Unique key for list rendering and manipulation
+          key: nanoid(), // Unique key for array iteration (always unique)
+          groupingKey: groupingKey, // Key for grouping identical custom orders
           quantity: 1,
           total: newItem.rate * 1,
         };
-        return [...prevItems, itemWithTotal];
+        return [...prevItems, itemWithKeys];
       }
     });
   }, []);
 
-  // Handler for updating quantity or removing items
+  // Handler for updating quantity or removing items (remains the same)
   const onUpdateQuantity = useCallback((key, newQuantity) => {
     setOrderItems((prevItems) => {
       if (newQuantity <= 0) {
-        // Remove item if the user sets quantity to 0 or less
         return prevItems.filter((item) => item.key !== key);
       }
 
@@ -73,7 +84,7 @@ export default function HomePage() {
           return {
             ...item,
             quantity: newQuantity,
-            total: newQuantity * item.rate,
+            total: newQuantity * item.rate, // Recalculate total based on item's rate (which includes addons)
           };
         }
         return item;
@@ -83,10 +94,14 @@ export default function HomePage() {
     });
   }, []);
 
-  // Handler for clearing the entire order
   const onClearOrder = useCallback(() => {
     setOrderItems([]);
   }, []);
+
+  const orderTotals = useMemo(
+    () => calculateOrderTotals(orderItems),
+    [orderItems]
+  );
 
   const orderData = {
     items: orderItems,
@@ -99,12 +114,11 @@ export default function HomePage() {
         <h1 className="text-4xl font-extrabold mb-8 text-primary">
           Tatli Order System (MVP)
         </h1>
-        <div className="max-w-4xl">
+        <div className="max-w-4xl space-y-8">
           <MenuList onAddItem={onAddItem} />
         </div>
       </main>
 
-      {/* Order Drawer (Cart) component, fixed at bottom right */}
       <OrderDrawer
         order={orderData}
         onUpdateQuantity={onUpdateQuantity}
