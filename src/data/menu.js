@@ -1,7 +1,10 @@
+import { icons } from "lucide-react";
+
 // data/menu.js
 export const menuData = [
   {
     category: "Burgers",
+    icon: "🍔",
     items: [
       { id: 1, name: "Zinger Burger", rate: 350 },
       { id: 2, name: "Chicken Burger", rate: 270 },
@@ -16,6 +19,7 @@ export const menuData = [
   },
   {
     category: "Paratha Rolls",
+    icon: "🌯",
     items: [
       { id: 11, name: "Chicken Paratha Roll", rate: 230 },
       { id: 12, name: "Zinger Paratha Roll", rate: 280 },
@@ -29,6 +33,7 @@ export const menuData = [
   },
   {
     category: "Wraps",
+    icon: "🌯",
     items: [
       { id: 19, name: "Tikka Wrap", rate: 350 },
       { id: 20, name: "Malai Boti Wrap", rate: 380 },
@@ -39,7 +44,8 @@ export const menuData = [
     addons: [{ id: 18, name: "Cheese", rate: 50 }],
   },
   {
-    category: "Panani Sandwiches",
+    category: "Sandwiches",
+    icon: "🥪",
     items: [
       { id: 24, name: "Chicken Tikka", rate: 550 },
       { id: 25, name: "Chicken Fajita", rate: 550 },
@@ -53,6 +59,7 @@ export const menuData = [
   },
   {
     category: "Shawarma",
+    icon: "🥙",
     items: [
       { id: 34, name: "Chicken Shawarma", rate: 190 },
       { id: 35, name: "Zinger Shawarma", rate: 270 },
@@ -63,6 +70,7 @@ export const menuData = [
   },
   {
     category: "Platter",
+    icon: "🍽️",
     items: [
       { id: 40, name: "Chicken Platter", rate: 400 },
       { id: 41, name: "Zinger Platter", rate: 450 },
@@ -72,6 +80,7 @@ export const menuData = [
   },
   {
     category: "Shapatta",
+    icon: "🌯",
     items: [
       { id: 45, name: "Shapatta Roll", rate: 380 },
       { id: 46, name: "Shapatta Tikka Roll", rate: 400 },
@@ -83,7 +92,7 @@ export const menuData = [
   },
   {
     category: "Deals",
-
+    icon: "🎉",
     deals: [
       {
         id: 1001,
@@ -132,6 +141,7 @@ export const menuData = [
   },
   {
     category: "BBQ Shawarma",
+    icon: "🥙",
     items: [
       { id: 51, name: "Tikka Shawarma", rate: 250 },
       { id: 52, name: "Malai Boti Shawarma", rate: 270 },
@@ -146,6 +156,7 @@ export const menuData = [
   },
   {
     category: "Buffalo Wings",
+    icon: "🍗",
     items: [
       { id: 60, name: "6 Pc Wings", rate: 350 },
       { id: 61, name: "12 Pc Wings", rate: 550 },
@@ -153,6 +164,7 @@ export const menuData = [
   },
   {
     category: "Nuggets",
+    icon: "🍟",
     items: [
       { id: 62, name: "Nuggets 6 Pc", rate: 260 },
       { id: 63, name: "Nuggets 12 Pc", rate: 500 },
@@ -160,6 +172,7 @@ export const menuData = [
   },
   {
     category: "BBQ Items",
+    icon: "🍖",
     items: [
       { id: 64, name: "Leg Piece", rate: 350 },
       { id: 65, name: "Chest Piece", rate: 380 },
@@ -177,6 +190,7 @@ export const menuData = [
   },
   {
     category: "Fries",
+    icon: "🍟",
     items: [
       { id: 76, name: "Plain Fries", rate: 200 },
       { id: 77, name: "Zinger Fries", rate: 250 },
@@ -189,6 +203,7 @@ export const menuData = [
   },
   {
     category: "Sauces",
+    icon: "🧂",
     items: [
       { id: 84, name: "Extra Sauce", rate: 60 },
       { id: 85, name: "Extra Cheese Slice", rate: 50 },
@@ -197,6 +212,7 @@ export const menuData = [
   },
   {
     category: "Beverages",
+    icon: "🥤",
     items: [
       { id: 88, name: "Regular Bottle 350 ml", rate: 80 },
       { id: 89, name: "1 Liter Bottle", rate: 170 },
@@ -209,6 +225,7 @@ export const menuData = [
   },
   {
     category: "Ice Cream",
+    icon: "🍧",
     scoops: ["1 scoop", "2 scoop", "3 scoop"],
     items: [
       { id: 96, name: "Mango Ice Cream", rates: [90, 170, 250] },
