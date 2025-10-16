@@ -7,16 +7,45 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import AddItemModal from "./AddItemModal";
-import { Plus } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
 import { menuData } from "@/data/menu";
+import { formatCurrency } from "@/utils/format";
+import { Button } from "@/components/ui/button";
 
-// Helper component for Deals visualization
+// Helper component to render the item card
+function MenuItemCard({ item, category, onAddItem }) {
+  // Check if the item is customizable (rates or category addons exist)
+  const isCustomizable =
+    item.rates || (category.addons && category.addons.length > 0);
+
+  // Determine the price display
+  const price =
+    item.rate !== null && item.rate !== undefined
+      ? formatCurrency(item.rate)
+      : item.rates
+      ? `${formatCurrency(item.rates[0])} +`
+      : "N/A";
+
+  return (
+    <AddItemModal item={item} category={category} onAddItem={onAddItem}>
+      <Card className="flex flex-col justify-between p-3 h-full cursor-pointer hover:bg-muted/50 transition-colors">
+        <CardTitle className="text-base font-semibold leading-tight pr-8">
+          {item.name}
+        </CardTitle>
+        <div className="mt-2 text-sm text-primary font-bold">
+          {price}
+          {isCustomizable && (
+            <span className="text-xs text-blue-500 ml-1">(Options)</span>
+          )}
+        </div>
+      </Card>
+    </AddItemModal>
+  );
+}
+
+// Helper component for Deals visualization - Remains the same, but simplified import
 function DealCard({ deal, onAddItem }) {
-  // Treat deals as simple, single-rate items for ordering
   const dealItem = {
     id: deal.id,
     name: deal.name,
@@ -44,7 +73,7 @@ function DealCard({ deal, onAddItem }) {
       <div className="flex justify-between items-center pt-3 border-t mt-3">
         <span className="font-bold text-xl">{formatCurrency(deal.rate)}</span>
         <Button size="sm" onClick={() => onAddItem(dealItem)}>
-          <Plus className="h-4 w-4 mr-1" /> Add
+          + Add Deal
         </Button>
       </div>
     </Card>
@@ -55,9 +84,8 @@ export default function MenuList({ onAddItem }) {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold mb-4">Our Menu</h2>
+      {/* Accordion type="multiple" keeps sections open for easier navigation */}
       <Accordion type="multiple" defaultValue={["Burgers"]} className="w-full">
-        {" "}
-        {/* Open Burgers by default */}
         {menuData.map((category) => (
           <Card key={category.category} className="mb-4">
             <AccordionItem value={category.category}>
@@ -78,36 +106,15 @@ export default function MenuList({ onAddItem }) {
                       ))}
                     </div>
                   ) : (
-                    /* Standard Items Section */
-                    <div className="grid gap-2">
-                      {category.items.map((item) => (
-                        <div
-                          key={item.id + item.name} // Use name + id for safety since IDs may repeat (e.g. BBQ Items)
-                          className="flex justify-between items-center py-2 border-b border-dashed last:border-b-0"
-                        >
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            {item.rate !== null && item.rate !== undefined && (
-                              <p className="text-sm text-muted-foreground">
-                                {formatCurrency(item.rate)}
-                              </p>
-                            )}
-                            {(category.addons || item.rates) && (
-                              <p className="text-xs text-blue-500">
-                                Customizable
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            {/* Use AddItemModal for all items; it handles Quick Add logic internally */}
-                            <AddItemModal
-                              item={item}
-                              category={category}
-                              onAddItem={onAddItem}
-                            />
-                          </div>
-                        </div>
+                    /* Standard Items Section (Grid Layout) */
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {category.items.map((item, index) => (
+                        <MenuItemCard
+                          key={item.id + item.name + index} // Unique key
+                          item={item}
+                          category={category}
+                          onAddItem={onAddItem}
+                        />
                       ))}
                     </div>
                   )}

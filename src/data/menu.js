@@ -225,7 +225,7 @@ export const menuData = [
       { id: 107, name: "Oreo Ice Cream", rates: [90, 170, 250] },
       { id: 108, name: "Fresh Fruit Tutti Frutti", rates: [90, 170, 250] },
       { id: 110, name: "Special Cone with Any Flavour", rate: 170 },
-      { id: 111, name: "Chocolate with Any Flavour", rate: 170 },
+      { id: 111, name: "Chocolate Cone with Any Flavour", rate: 170 },
     ],
     addons: [
       { id: 130, name: "Sprinkles", rates: [10, 20, 30] },

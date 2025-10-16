@@ -23,29 +23,43 @@ import { formatCurrency } from "@/utils/format";
 import { ShoppingCart, Minus, Plus } from "lucide-react";
 
 export default function OrderDrawer({ order, onUpdateQuantity, onClearOrder }) {
-  const { items } = order;
-  const taxRate = 0.05; // 5% placeholder tax
+  const { items, orderType, includeGST } = order;
+
+  // Use ENV variables for calculation visibility
+  const GST_RATE = parseFloat(process.env.NEXT_PUBLIC_GST_RATE || 0);
+  const DELIVERY_CHARGE = parseFloat(
+    process.env.NEXT_PUBLIC_DELIVERY_CHARGE || 0
+  );
 
   const totalCalculations = useMemo(() => {
-    const calculatedSubtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const tax = calculatedSubtotal * taxRate;
-    const grandTotal = calculatedSubtotal + tax;
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+
+    // GST Logic: Only applies if includeGST is true AND orderType is 'dine_in'
+    const tax = includeGST && orderType === "dine_in" ? subtotal * GST_RATE : 0;
+
+    // Delivery Logic: Only applies if orderType is 'delivery'
+    const deliveryFee = orderType === "delivery" ? DELIVERY_CHARGE : 0;
+
+    const grandTotal = subtotal + tax + deliveryFee;
 
     return {
-      subtotal: calculatedSubtotal,
+      subtotal: subtotal,
       tax: tax,
+      deliveryFee: deliveryFee,
       grandTotal: grandTotal,
     };
-  }, [items]);
+  }, [items, orderType, includeGST, GST_RATE, DELIVERY_CHARGE]);
 
   const handlePrint = () => {
+    // Save all state for printing
     sessionStorage.setItem(
       "currentOrder",
       JSON.stringify({
+        ...order,
         ...totalCalculations,
-        items: items,
         date: new Date().toISOString(),
-        taxRate: taxRate,
+        GST_RATE,
+        DELIVERY_CHARGE,
       })
     );
     window.open("/print", "_blank");
@@ -68,11 +82,12 @@ export default function OrderDrawer({ order, onUpdateQuantity, onClearOrder }) {
         <div className="mx-auto w-full max-w-lg p-4">
           <DrawerHeader>
             <DrawerTitle>Current Order</DrawerTitle>
-            <DrawerDescription>
-              Review and manage items before printing the slip.
+            <DrawerDescription className="font-bold text-lg uppercase text-primary">
+              {orderType.replace("_", " ")}
             </DrawerDescription>
           </DrawerHeader>
 
+          {/* Cart Items Table - Uses shadcn Table and Card */}
           <Card className="max-h-96 overflow-y-auto mb-4">
             <CardContent className="p-0">
               {items.length === 0 ? (
@@ -146,8 +161,8 @@ export default function OrderDrawer({ order, onUpdateQuantity, onClearOrder }) {
                               </TableCell>
                               <TableCell className="py-0.5 text-center text-sm border-none"></TableCell>
                               <TableCell className="py-0.5 text-right text-xs border-none">
-                                {formatCurrency(addon.total * item.quantity)}{" "}
                                 {/* Addon total * Base item Qty */}
+                                {formatCurrency(addon.total * item.quantity)}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -159,19 +174,36 @@ export default function OrderDrawer({ order, onUpdateQuantity, onClearOrder }) {
             </CardContent>
           </Card>
 
+          {/* Totals Summary (Updated) */}
           <div className="p-4 space-y-2">
-            <div className="flex justify-between">
+            <div className="flex justify-between text-lg font-semibold">
               <span>Subtotal:</span>
-              <span className="font-semibold">
-                {formatCurrency(totalCalculations.subtotal)}
-              </span>
+              <span>{formatCurrency(totalCalculations.subtotal)}</span>
             </div>
+
+            {/* Tax Line Item */}
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Tax (5%):</span>
+              <span>
+                GST ({(GST_RATE * 100).toFixed(0)}%):
+                {orderType !== "dine_in"
+                  ? " (N/A)"
+                  : includeGST
+                  ? ""
+                  : " (Off)"}
+              </span>
               <span className="font-medium">
                 {formatCurrency(totalCalculations.tax)}
               </span>
             </div>
+
+            {/* Delivery Fee Line Item */}
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Delivery Fee:</span>
+              <span className="font-medium">
+                {formatCurrency(totalCalculations.deliveryFee)}
+              </span>
+            </div>
+
             <div className="flex justify-between text-xl font-bold border-t pt-2">
               <span>Grand Total:</span>
               <span>{formatCurrency(totalCalculations.grandTotal)}</span>

@@ -11,41 +11,42 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Plus, Minus, X } from "lucide-react"; // Added X icon
+import { Plus, Minus, X } from "lucide-react";
 import { formatCurrency } from "@/utils/format";
 
-export default function AddItemModal({ item, category, onAddItem }) {
+export default function AddItemModal({ item, category, onAddItem, children }) {
   const [open, setOpen] = useState(false);
 
+  // Safely define scoop labels and initial base rate/index
   const scoopLabels = category.scoops || [];
+  const initialRate =
+    item.rates && item.rates.length > 0 ? item.rates[0] : item.rate;
+  const initialRateIndex = item.rates ? item.rates.indexOf(initialRate) : 0;
 
   // State variables for customization
-  const [selectedRate, setSelectedRate] = useState(
-    item.rates && item.rates.length > 0 ? item.rates[0] : item.rate
-  );
-  const [selectedRateIndex, setSelectedRateIndex] = useState(
-    item.rates ? item.rates.indexOf(selectedRate) : 0
-  );
+  const [selectedRate, setSelectedRate] = useState(initialRate);
+  const [selectedRateIndex, setSelectedRateIndex] = useState(initialRateIndex);
+
+  // Addon Management State: { addonId: quantity }
   const initialAddonState = category.addons
     ? category.addons.reduce((acc, addon) => ({ ...acc, [addon.id]: 0 }), {})
     : {};
   const [selectedAddons, setSelectedAddons] = useState(initialAddonState);
 
-  // Added state to track last successful add for visual feedback
+  // State for visual feedback on successful repeat add
   const [lastAddedKey, setLastAddedKey] = useState(null);
+
+  // --- Utility Functions ---
 
   // Reset all modal state when it closes
   const resetModalState = () => {
-    setSelectedRate(
-      item.rates && item.rates.length > 0 ? item.rates[0] : item.rate
-    );
-    setSelectedRateIndex(item.rates ? item.rates.indexOf(selectedRate) : 0);
+    setSelectedRate(initialRate);
+    setSelectedRateIndex(initialRateIndex);
     setSelectedAddons(initialAddonState);
     setLastAddedKey(null);
   };
 
-  // --- MEMOIZED CALCULATIONS ---
-
+  // Get the current rate of an addon based on the selected base item size index
   const getCurrentAddonRate = (addon) => {
     if (
       item.rates &&
@@ -55,20 +56,26 @@ export default function AddItemModal({ item, category, onAddItem }) {
     ) {
       return addon.rates[selectedRateIndex];
     }
+    // Fallback to simple fixed 'rate' property (for Burgers, Wraps, etc.)
     return addon.rate || 0;
   };
 
+  // --- MEMOIZED CALCULATIONS ---
+
+  // Calculate total price of all selected addons
   const addonsTotal = useMemo(() => {
     if (!category.addons) return 0;
     return category.addons.reduce((total, addon) => {
       const quantity = selectedAddons[addon.id] || 0;
-      const currentRate = getCurrentAddonRate(addon);
+      const currentRate = getCurrentAddonRate(addon); // Use dynamic rate
       return total + currentRate * quantity;
     }, 0);
   }, [selectedAddons, selectedRateIndex, category.addons]);
 
+  // Calculate the final price of the customized item
   const finalItemRate = selectedRate + addonsTotal;
 
+  // Determine the descriptive label for the item
   const itemLabel =
     item.rates && scoopLabels.length > 0
       ? scoopLabels[selectedRateIndex]
@@ -78,7 +85,8 @@ export default function AddItemModal({ item, category, onAddItem }) {
 
   const handleRateSelect = (rate, index) => {
     setSelectedRate(rate);
-    setSelectedRateIndex(index);
+    setSelectedRateIndex(index); // Update index when scoop/rate changes
+    setLastAddedKey(null); // Clear feedback on new selection
   };
 
   const handleUpdateAddon = (addonId, delta) => {
@@ -86,6 +94,7 @@ export default function AddItemModal({ item, category, onAddItem }) {
       const newQuantity = Math.max(0, (prev[addonId] || 0) + delta);
       return { ...prev, [addonId]: newQuantity };
     });
+    setLastAddedKey(null); // Clear feedback on new selection
   };
 
   const handleFinalAddToOrder = () => {
@@ -99,7 +108,7 @@ export default function AddItemModal({ item, category, onAddItem }) {
             return {
               id: addon.id,
               name: addon.name,
-              rate: currentRate,
+              rate: currentRate, // Store the price used at the time of order
               quantity: quantity,
               total: currentRate * quantity,
             };
@@ -114,10 +123,14 @@ export default function AddItemModal({ item, category, onAddItem }) {
       addons: activeAddons,
     };
 
-    // The core logic is to call onAddItem and then reset the addon *quantities* // but keep the modal open and the scoop/rate *selection* active.
+    // 1. Add item to global cart
     onAddItem(customItem);
-    setLastAddedKey(Date.now()); // Update key for visual feedback
-    setSelectedAddons(initialAddonState); // Reset addon quantities for the next item
+
+    // 2. Set feedback key for visual confirmation
+    setLastAddedKey(Date.now());
+
+    // 3. Reset addon quantities, but keep base rate selection for repeats (UX fix)
+    setSelectedAddons(initialAddonState);
   };
 
   const handleModalOpenChange = (newOpenState) => {
@@ -127,7 +140,9 @@ export default function AddItemModal({ item, category, onAddItem }) {
     setOpen(newOpenState);
   };
 
-  // Guard clause for items with no rates
+  // --- RENDERING GUARDS & UX QUICK ADD ---
+
+  // 1. Guard for missing rates
   if (item.rate === null && !item.rates) {
     return (
       <Button size="sm" variant="secondary" disabled>
@@ -136,15 +151,13 @@ export default function AddItemModal({ item, category, onAddItem }) {
     );
   }
 
-  // Determine if customization is needed
   const isCustomizable =
     item.rates || (category.addons && category.addons.length > 0);
 
-  // Direct Add Button for simple, non-customizable items (UX IMPROVEMENT: Quick Add)
+  // 2. UX Improvement: Direct Add for simple, non-customizable items
   if (!isCustomizable && item.rate !== null && item.rate !== undefined) {
     return (
-      <Button
-        size="sm"
+      <div
         onClick={() =>
           onAddItem({
             name: item.name,
@@ -154,19 +167,17 @@ export default function AddItemModal({ item, category, onAddItem }) {
             addons: [],
           })
         }
+        className="cursor-pointer"
       >
-        <Plus className="h-4 w-4" />
-      </Button>
+        {children}
+      </div>
     );
   }
 
+  // 3. Render Customization Modal for complex items
   return (
     <Dialog open={open} onOpenChange={handleModalOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          {isCustomizable ? "Customize" : <Plus className="h-4 w-4" />}
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md p-0">
         <DialogHeader className="p-4 pb-2 bg-primary text-primary-foreground rounded-t-lg flex-row justify-between items-center">
           <DialogTitle>Customize {item.name}</DialogTitle>
@@ -185,7 +196,7 @@ export default function AddItemModal({ item, category, onAddItem }) {
           {lastAddedKey && (
             <Card className="border-green-500 bg-green-50 dark:bg-green-900/50 p-3 text-center transition-all duration-300">
               <p className="font-semibold text-green-700 dark:text-green-300">
-                Added to Order. Adjust quantity or close.
+                Item added to order! Add another or close.
               </p>
             </Card>
           )}
@@ -264,7 +275,7 @@ export default function AddItemModal({ item, category, onAddItem }) {
               Total: {formatCurrency(finalItemRate)}
             </div>
             <Button onClick={handleFinalAddToOrder}>
-              Add to Order (Current Qty: 1)
+              Add to Order (Total: {formatCurrency(finalItemRate)})
             </Button>
           </div>
         </DialogFooter>

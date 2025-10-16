@@ -14,7 +14,7 @@ import {
 
 export default function PrintPage() {
   const [order, setOrder] = useState(null);
-  const [dateTime, setDateTime] = useState(new Date());
+  const [dateTime] = useState(new Date());
 
   useEffect(() => {
     const storedOrder = sessionStorage.getItem("currentOrder");
@@ -40,20 +40,24 @@ export default function PrintPage() {
       <div className="p-8 text-center bg-background text-foreground">
         <h1 className="text-2xl font-bold">Error Loading Order</h1>
         <p className="mt-2">
-          Please go back to the main page and click &apos;Print Slip&apos;
-          again.
+          Please go back to the main page and click 'Print Slip' again.
         </p>
       </div>
     );
   }
 
-  // --- Print Slip Layout (58mm Thermal Friendly) ---
+  // Use values from the order object (calculated in page.js)
+  const { subtotal, tax, deliveryFee, grandTotal, orderType } = order;
+  const GST_RATE_PERCENT =
+    (order.GST_RATE || process.env.NEXT_PUBLIC_GST_RATE || 0) * 100;
 
   const PrintLayout = (
     <div className="print-only-container p-2">
       <header className="text-center mb-3">
         <h1 className="font-bold text-lg leading-tight">TATLI RESTAURANT</h1>
-        <p className="text-xs">Order Slip</p>
+        <p className="text-xs font-bold uppercase">
+          {orderType.replace("_", " ")} Order
+        </p>
         <p className="text-xs">
           Date: {formatDate(order.date)}
           <br />
@@ -62,7 +66,6 @@ export default function PrintPage() {
         <hr className="my-2 border-black border-t-[1.5px]" />
       </header>
 
-      {/* Items List - Using a bare Table for structure */}
       <Card className="border-0 shadow-none p-0">
         <CardContent className="p-0">
           <Table className="w-full text-left">
@@ -116,6 +119,7 @@ export default function PrintPage() {
                           {formatCurrency(addon.rate)}
                         </TableCell>
                         <TableCell className="py-0.5 px-0 text-right text-xs">
+                          {/* Display total of this specific addon across all quantities of the base item */}
                           {formatCurrency(addon.total * item.quantity)}
                         </TableCell>
                       </TableRow>
@@ -131,16 +135,27 @@ export default function PrintPage() {
       <footer className="mt-4 text-right space-y-1">
         <div className="flex justify-between">
           <span>SUBTOTAL:</span>
-          <span>{formatCurrency(order.subtotal)}</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-sm">
-          <span>TAX:</span>
-          <span>{formatCurrency(order.tax)}</span>
-        </div>
+
+        {tax > 0 && (
+          <div className="flex justify-between text-sm">
+            <span>GST ({GST_RATE_PERCENT}%):</span>
+            <span>{formatCurrency(tax)}</span>
+          </div>
+        )}
+
+        {deliveryFee > 0 && (
+          <div className="flex justify-between text-sm">
+            <span>DELIVERY FEE:</span>
+            <span>{formatCurrency(deliveryFee)}</span>
+          </div>
+        )}
+
         <hr className="my-1 border-black border-t-[1.5px]" />
         <div className="flex justify-between font-bold text-lg">
           <span>GRAND TOTAL:</span>
-          <span>{formatCurrency(order.grandTotal)}</span>
+          <span>{formatCurrency(grandTotal)}</span>
         </div>
         <p className="text-center mt-3 text-xs">
           *** Thank you for your order! ***
@@ -153,7 +168,7 @@ export default function PrintPage() {
     <>
       <div className="p-8 bg-background text-foreground">
         <h1 className="text-2xl font-bold mb-4">
-          Print Preview (Ready for 58mm)
+          Print Preview ({orderType.replace("_", " ")})
         </h1>
         <div className="bg-gray-100 dark:bg-gray-800 p-4 border rounded-lg max-w-sm mx-auto shadow-xl">
           <div className="bg-white dark:bg-black text-black dark:text-white p-2">
