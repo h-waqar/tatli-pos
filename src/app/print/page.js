@@ -40,7 +40,8 @@ export default function PrintPage() {
       <div className="p-8 text-center bg-background text-foreground">
         <h1 className="text-2xl font-bold">Error Loading Order</h1>
         <p className="mt-2">
-          Please go back to the main page and click 'Print Slip' again.
+          Please go back to the main page and click &apos;Print Slip&apos;
+          again.
         </p>
       </div>
     );
