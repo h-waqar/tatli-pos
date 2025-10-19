@@ -1,29 +1,30 @@
-// utils/format.js
+// src/utils/format.js
 
 export function formatCurrency(amount) {
-  // Use Pakistan Rupee (PKR) as currency, with a focus on clean whole numbers
   return new Intl.NumberFormat("en-PK", {
     style: "currency",
     currency: "PKR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount);
+  })
+    .format(amount)
+    .replace("PKR", "Rs.");
 }
 
 export function formatDate(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
     month: "short",
-    day: "numeric",
     year: "numeric",
-  });
+  }).format(date);
 }
 
 export function formatTime(dateString) {
   const date = new Date(dateString);
-  return date.toLocaleTimeString("en-US", {
+  return new Intl.DateTimeFormat("en-US", {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
-  });
+    hour12: true,
+  }).format(date);
 }

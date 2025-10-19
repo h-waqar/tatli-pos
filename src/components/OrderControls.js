@@ -1,24 +1,10 @@
-"use client";
+// src/components/OrderControls.js
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-
-const ORDER_TYPES = [
-  { value: "dine_in", label: "Dine In" },
-  { value: "take_away", label: "Take Away" },
-  { value: "delivery", label: "Delivery" },
-];
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BadgeDollarSign, Car, ShoppingBag } from "lucide-react";
 
 export default function OrderControls({
   orderType,
@@ -26,66 +12,48 @@ export default function OrderControls({
   includeGST,
   setIncludeGST,
 }) {
-  // Logic: GST is only applicable to Dine In orders, so we disable the toggle otherwise.
-  const isGSTApplicable = orderType === "dine_in";
-
-  // Logic: Delivery Fee is only applicable to Delivery orders.
-  const isDelivery = orderType === "delivery";
-
-  const handleOrderTypeChange = (value) => {
-    setOrderType(value);
-    // Automatically turn off GST if switching away from Dine In
-    if (value !== "dine_in") {
-      setIncludeGST(false);
-    }
-  };
-
   return (
-    <Card className="mb-4">
+    <Card>
       <CardHeader>
-        <CardTitle>Order Details</CardTitle>
+        <CardTitle>Order Type</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Order Type Selector */}
-        <div className="grid w-full items-center gap-1.5">
-          <Label htmlFor="order-type">Order Type</Label>
-          <Select value={orderType} onValueChange={handleOrderTypeChange}>
-            <SelectTrigger id="order-type" className="w-full">
-              <SelectValue placeholder="Select Type" />
-            </SelectTrigger>
-            <SelectContent>
-              {ORDER_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          {/* <Label className="mb-2 block font-semibold"></Label> */}
+          <RadioGroup
+            value={orderType}
+            onValueChange={setOrderType}
+            className="flex flex-wrap gap-4"
+          >
+            {[
+              { value: "dine_in", label: "Dine In", icon: BadgeDollarSign },
+              { value: "take_away", label: "Take Away", icon: ShoppingBag },
+              { value: "delivery", label: "Delivery", icon: Car },
+            ].map(({ value, label, icon: Icon }) => (
+              <Label
+                key={value}
+                htmlFor={value}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-md border-2 p-4 transition-colors hover:bg-accent hover:text-accent-foreground ${
+                  orderType === value ? "border-primary" : ""
+                }`}
+              >
+                <RadioGroupItem value={value} id={value} className="sr-only" />
+                <Icon className="mb-2 h-6 w-6" />
+                {label}
+              </Label>
+            ))}
+          </RadioGroup>
         </div>
-
-        {/* GST Toggle (Dine In Only) */}
-        <div className="flex items-center justify-between">
-          <Label htmlFor="gst-toggle">
-            Apply GST Tax
-            <p className="text-xs text-muted-foreground">
-              ({process.env.NEXT_PUBLIC_GST_RATE * 100}%) - Only for Dine In
-            </p>
-          </Label>
-          <Switch
-            id="gst-toggle"
-            checked={includeGST}
-            onCheckedChange={setIncludeGST}
-            disabled={!isGSTApplicable}
-          />
-        </div>
-
-        {/* Delivery Indicator */}
-        {isDelivery && (
-          <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded-sm">
-            <p className="text-sm font-medium">
-              Delivery Fee applies:{" "}
-              {formatCurrency(process.env.NEXT_PUBLIC_DELIVERY_CHARGE)}
-            </p>
+        {orderType === "dine_in" && (
+          <div className="flex items-center space-x-2 rounded-lg border p-4">
+            <Switch
+              id="gst-toggle"
+              checked={includeGST}
+              onCheckedChange={setIncludeGST}
+            />
+            <Label htmlFor="gst-toggle" className="font-semibold">
+              Apply GST ({process.env.NEXT_PUBLIC_GST_RATE}%)
+            </Label>
           </div>
         )}
       </CardContent>
