@@ -147,9 +147,10 @@ export default function HomePage() {
                     activeCategory === category.category ? "default" : "outline"
                   }
                   onClick={() => setActiveCategory(category.category)}
-                  className="h-14 w-28 flex-col justify-center items-center p-2 text-center"
+                  className="h-24 w-36 flex-col justify-center items-center p-2 text-center"
+                  // className="h-14 w-28 flex-col justify-center items-center p-2 text-center"
                 >
-                  <span className="text-lg">{category.icon}</span>
+                  <span className="text-3xl">{category.icon}</span>
                   <span className="text-xs font-semibold leading-tight">
                     {category.category}
                   </span>
@@ -157,18 +158,18 @@ export default function HomePage() {
               ))}
             </div>
 
+            {/* MenuList */}
+            <MenuList
+              activeCategoryData={activeCategoryData}
+              onAddItem={onAddItem}
+            />
+
             {/* Controls Panel */}
             <OrderControls
               orderType={orderType}
               setOrderType={setOrderType}
               includeGST={includeGST}
               setIncludeGST={setIncludeGST}
-            />
-
-            {/* MenuList */}
-            <MenuList
-              activeCategoryData={activeCategoryData}
-              onAddItem={onAddItem}
             />
           </div>
         </main>
