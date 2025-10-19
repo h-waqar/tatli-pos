@@ -61,12 +61,9 @@ export default function PrintPage() {
         </p>
       </header>
       <hr className="my-2 border-t border-dashed border-black" />
-
-      {/* --- FIX: Added 'table-fixed' to enforce column widths --- */}
       <Table className="text-xs table-fixed w-full">
         <TableHeader>
           <TableRow>
-            {/* --- FIX: Defined column widths --- */}
             <TableHead className="h-auto p-1 font-bold w-[60%]">Item</TableHead>
             <TableHead className="h-auto p-1 text-center font-bold w-[15%]">
               Qty
@@ -80,7 +77,6 @@ export default function PrintPage() {
           {items.map((item) => (
             <React.Fragment key={item.key}>
               <TableRow>
-                {/* --- FIX: Added 'break-words' to wrap long text --- */}
                 <TableCell className="p-1 font-bold break-words align-top">
                   {item.name}
                 </TableCell>
@@ -94,7 +90,6 @@ export default function PrintPage() {
 
               {item.items?.map((dealItem, index) => (
                 <TableRow key={`${item.key}-deal-${index}`}>
-                  {/* --- FIX: Added 'break-words' to wrap long text in deals --- */}
                   <TableCell className="py-0 pl-4 text-xs italic break-words">
                     - {dealItem.name}
                   </TableCell>
@@ -155,13 +150,17 @@ export default function PrintPage() {
 
   return (
     <>
-      <div className="screen-only bg-gray-100 p-8">
+      {/* This is the preview shown on screen. The CSS will hide it during printing. */}
+      <div className="bg-gray-100 p-8">
         <h1 className="mb-4 text-center text-2xl font-bold">Print Preview</h1>
         <Card className="mx-auto w-full max-w-[320px] shadow-lg">
           <CardContent className="p-4">{PrintLayout}</CardContent>
         </Card>
       </div>
-      <div className="print-only">{PrintLayout}</div>
+
+      {/* --- THIS IS THE FIX --- */}
+      {/* The class name now matches the one in your globals.css file. */}
+      <div className="print-only-container">{PrintLayout}</div>
     </>
   );
 }
