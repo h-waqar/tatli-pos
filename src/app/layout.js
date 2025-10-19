@@ -18,7 +18,7 @@ export default function RootLayout({ children }) {
         className={`${inter.className} min-h-screen bg-gray-50 antialiased`}
       >
         {children}
-        <Toaster position="top-right" duration={12500} />
+        <Toaster position="top-right" duration={2500} />
       </body>
     </html>
   );
