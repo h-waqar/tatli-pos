@@ -89,10 +89,7 @@ export default function HomePage() {
         const newItem = {
           id: baseItem.id,
           name: baseItem.name,
-          // --- THIS IS THE FIX ---
-          // If the baseItem is a deal, save its internal items array
           items: baseItem.items,
-          // --------------------
           key: nanoid(),
           groupingKey,
           quantity: 1,
@@ -134,7 +131,7 @@ export default function HomePage() {
   return (
     <div className="flex h-screen flex-col bg-gray-50/50">
       <header className="sticky top-0 z-10 border-b bg-white p-4 shadow-sm">
-        <h1 className="text-xl text-center font-extrabold text-primary">
+        <h1 className="text-2xl font-extrabold text-primary">
           Tatli Order System 🧾
         </h1>
       </header>
@@ -155,11 +152,11 @@ export default function HomePage() {
                     activeCategory === category.category ? "default" : "outline"
                   }
                   onClick={() => setActiveCategory(category.category)}
-                  className="h-28 w-48 flex-col items-center justify-center gap-1 p-2 text-center"
-                  // className="h-24 w-32 flex-col items-center justify-center gap-1 p-2 text-center"
+                  // --- FIX: Made category cards wider as requested ---
+                  className="h-24 w-36 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
-                  <span className="text-4xl">{category.icon}</span>
-                  <span className="text-sm font-semibold leading-tight">
+                  <span className="text-3xl">{category.icon}</span>
+                  <span className="text-xs font-semibold leading-tight">
                     {category.category}
                   </span>
                 </Button>
@@ -178,6 +175,7 @@ export default function HomePage() {
         onClearOrder={onClearOrder}
       />
       <CustomizationDialog
+        key={dialogState.item ? dialogState.item.id : "dialog-closed"}
         isOpen={dialogState.isOpen}
         onClose={() =>
           setDialogState({ isOpen: false, item: null, category: null })

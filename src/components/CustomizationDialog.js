@@ -24,22 +24,15 @@ export default function CustomizationDialog({
   category,
   onConfirm,
 }) {
-  const [selectedBaseIndex, setSelectedBaseIndex] = useState(null);
+  // Since the `key` prop forces a reset, we can initialize state directly.
+  const [selectedBaseIndex, setSelectedBaseIndex] = useState(() => {
+    // If it's a single-rate item, it's pre-selected. Otherwise, null.
+    return item && item.rate && !item.rates ? -1 : null;
+  });
   const [selectedAddons, setSelectedAddons] = useState([]);
 
+  // This effect correctly re-prices addons when the scoop size changes.
   useEffect(() => {
-    if (isOpen && item) {
-      if (item.rate && !item.rates) {
-        setSelectedBaseIndex(-1);
-      } else {
-        setSelectedBaseIndex(null);
-      }
-      setSelectedAddons([]);
-    }
-  }, [isOpen, item]);
-
-  useEffect(() => {
-    // --- FIX: Add a guard to prevent running when closing ---
     if (!item || selectedBaseIndex === null || selectedAddons.length === 0) {
       return;
     }
@@ -60,10 +53,9 @@ export default function CustomizationDialog({
     });
 
     setSelectedAddons(rePricedAddons);
-  }, [selectedBaseIndex, category, item]); // Added item dependency for safety
+  }, [selectedBaseIndex, category, item, selectedAddons.length]); // Refined dependencies
 
   const selectedRate = useMemo(() => {
-    // --- FIX: Add a guard for when item is null during closing animation ---
     if (!item) return null;
     if (selectedBaseIndex === -1) return item.rate;
     if (selectedBaseIndex !== null && item.rates) {
@@ -82,15 +74,18 @@ export default function CustomizationDialog({
   }, [selectedRate, selectedAddons]);
 
   const handleAddonQuantity = (addon, change) => {
+    const originalAddonDef = category.addons.find((a) => a.id === addon.id);
+    if (!originalAddonDef) return;
+
     let resolvedAddonPrice;
-    if (addon.rates) {
+    if (originalAddonDef.rates) {
       if (selectedBaseIndex !== null && selectedBaseIndex !== -1) {
-        resolvedAddonPrice = addon.rates[selectedBaseIndex];
+        resolvedAddonPrice = originalAddonDef.rates[selectedBaseIndex];
       } else {
         return;
       }
     } else {
-      resolvedAddonPrice = addon.rate;
+      resolvedAddonPrice = originalAddonDef.rate;
     }
 
     setSelectedAddons((prev) => {
@@ -104,16 +99,22 @@ export default function CustomizationDialog({
           a.id === addon.id ? { ...a, quantity: newQuantity } : a
         );
       } else if (change > 0) {
-        return [...prev, { ...addon, rate: resolvedAddonPrice, quantity: 1 }];
+        return [
+          ...prev,
+          {
+            id: addon.id,
+            name: addon.name,
+            rate: resolvedAddonPrice,
+            quantity: 1,
+          },
+        ];
       }
       return prev;
     });
   };
 
   const handleConfirmClick = () => {
-    // --- FIX: Add a guard here too for safety ---
     if (!item) return;
-
     const finalItem = {
       ...item,
       name: item.rates
@@ -125,7 +126,6 @@ export default function CustomizationDialog({
     onClose();
   };
 
-  // This early return is now our final safety net
   if (!item || !category) return null;
 
   return (
@@ -175,11 +175,14 @@ export default function CustomizationDialog({
                   );
                   const quantity = selected ? selected.quantity : 0;
 
-                  const displayPrice = addon.rates
+                  const originalAddonDef = category.addons.find(
+                    (a) => a.id === addon.id
+                  );
+                  const displayPrice = originalAddonDef.rates
                     ? selectedBaseIndex !== null && selectedBaseIndex !== -1
-                      ? addon.rates[selectedBaseIndex]
+                      ? originalAddonDef.rates[selectedBaseIndex]
                       : "Select size"
-                    : addon.rate;
+                    : originalAddonDef.rate;
 
                   return (
                     <div
