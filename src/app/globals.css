@@ -135,7 +135,7 @@
   /* The container that holds the printable receipt content */
   .print-only-container {
     display: block !important;
-    width: 58mm; /* Fixed width for 58mm printer */
+    width: 80mm; /* Fixed width for 58mm printer */
     margin: 0;
     padding: 0;
     font-size: 9px; /* Smaller font for thermal receipt */
@@ -144,7 +144,7 @@
 
   /* Ensure the print page itself has no margins */
   @page {
-    size: 58mm auto; /* Thermal printer width and auto height */
+    size: 80mm auto; /* Thermal printer width and auto height */
     margin: 0;
   }
 }
