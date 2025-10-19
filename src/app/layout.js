@@ -2,6 +2,7 @@
 
 import "./globals.css";
 import { Inter } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner"; // <-- Import the NEW Toaster from sonner
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
         className={`${inter.className} min-h-screen bg-gray-50 antialiased`}
       >
         {children}
+        <Toaster position="top-right" duration={12500} />
       </body>
     </html>
   );

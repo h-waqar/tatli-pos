@@ -1,5 +1,3 @@
-// src/app/page.js
-
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
@@ -10,6 +8,7 @@ import OrderControls from "@/components/OrderControls";
 import CustomizationDialog from "@/components/CustomizationDialog";
 import { menuData } from "@/data/menu";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner"; // <-- Import toast directly from sonner
 
 const GST_RATE = parseFloat(process.env.NEXT_PUBLIC_GST_RATE || 0);
 const SERVICE_CHARGE_RATE = parseFloat(
@@ -70,12 +69,14 @@ export default function HomePage() {
     const finalRate = baseItem.rate + addonsTotal;
     const groupingKey = createItemKey(baseItem, selectedAddons);
 
+    let isNewItem = true;
     setOrderItems((prevItems) => {
       const existingItemIndex = prevItems.findIndex(
         (item) => item.groupingKey === groupingKey
       );
 
       if (existingItemIndex > -1) {
+        isNewItem = false; // It's an existing item
         const updatedItems = [...prevItems];
         const existingItem = updatedItems[existingItemIndex];
         const newQuantity = existingItem.quantity + 1;
@@ -101,22 +102,48 @@ export default function HomePage() {
         return [...prevItems, newItem];
       }
     });
+
+    // --- THIS IS THE FIX ---
+    // Use the new, simpler sonner syntax
+    if (isNewItem) {
+      toast.success("Item Added", {
+        description: `${baseItem.name} has been added to your order.`,
+      });
+    } else {
+      toast.info("Quantity Increased", {
+        description: `${baseItem.name} quantity has been updated.`,
+      });
+    }
   }, []);
 
   const onUpdateQuantity = useCallback((key, newQuantity) => {
     setOrderItems((prevItems) => {
-      if (newQuantity <= 0) {
-        return prevItems.filter((item) => item.key !== key);
-      }
-      return prevItems.map((item) =>
-        item.key === key
-          ? { ...item, quantity: newQuantity, total: item.rate * newQuantity }
-          : item
-      );
+      return prevItems
+        .map((item) => {
+          if (item.key === key) {
+            if (newQuantity > item.quantity) {
+              toast("Quantity Updated", {
+                description: `${item.name} is now x${newQuantity}.`,
+              });
+            }
+            return {
+              ...item,
+              quantity: newQuantity,
+              total: item.rate * newQuantity,
+            };
+          }
+          return item;
+        })
+        .filter((item) => item.quantity > 0);
     });
   }, []);
 
-  const onClearOrder = useCallback(() => setOrderItems([]), []);
+  const onClearOrder = useCallback(() => {
+    setOrderItems([]);
+    toast.error("Order Cleared", {
+      description: "All items have been removed from the order.",
+    });
+  }, []);
 
   const orderTotals = useMemo(
     () => calculateOrderTotals(orderItems, orderType, includeGST),
@@ -152,8 +179,7 @@ export default function HomePage() {
                     activeCategory === category.category ? "default" : "outline"
                   }
                   onClick={() => setActiveCategory(category.category)}
-                  // --- FIX: Made category cards wider as requested ---
-                  className="h-24 w-36 flex-col items-center justify-center gap-1 p-2 text-center"
+                  className="h-28 w-48 flex-col items-center justify-center gap-1 p-2 text-center"
                 >
                   <span className="text-3xl">{category.icon}</span>
                   <span className="text-xs font-semibold leading-tight">

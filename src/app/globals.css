@@ -148,3 +148,8 @@
     margin: 0;
   }
 }
+
+[data-sonner-toast] [data-description] {
+  color: var(--foreground) !important;
+  opacity: 1 !important;
+}
