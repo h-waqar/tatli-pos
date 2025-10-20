@@ -214,6 +214,7 @@ export const menuData = [
     icon: "🥤",
     items: [
       { id: 88, name: "Regular Bottle 350 ml", rate: 80 },
+      { id: 112, name: "500ml Bottle", rate: 120 },
       { id: 89, name: "1 Liter Bottle", rate: 170 },
       { id: 90, name: "1.5 Liter Bottle", rate: 210 },
       { id: 91, name: "Tin Pack", rate: 120 },
