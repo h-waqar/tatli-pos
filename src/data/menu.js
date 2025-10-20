@@ -97,7 +97,7 @@ export const menuData = [
       {
         id: 1001,
         name: "Deal 1",
-        rate: 700,
+        rate: 500,
         items: [
           { name: "Zesty Zinger Burger" },
           { name: "Fries" },
@@ -107,7 +107,7 @@ export const menuData = [
       {
         id: 1002,
         name: "Deal 2 (Kids Deal)",
-        rate: 850,
+        rate: 700,
         items: [
           { name: "Nuggets 5" },
           { name: "Fries" },
@@ -118,7 +118,7 @@ export const menuData = [
       {
         id: 1003,
         name: "Deal 3",
-        rate: 1200,
+        rate: 950,
         items: [
           { name: "Thrill Grill Chicken Buger with Cheese" },
           { name: "Thrill Grill Wrap" },
@@ -129,7 +129,7 @@ export const menuData = [
       {
         id: 1004,
         name: "Deal 4",
-        rate: 1800,
+        rate: 1750,
         items: [
           { name: "2 Zesty Burger with Cheese" },
           { name: "2 Zesty Zinger Wrap" },
