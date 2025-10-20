@@ -24,19 +24,21 @@ export default function CustomizationDialog({
   category,
   onConfirm,
 }) {
-  // Since the `key` prop forces a reset, we can initialize state directly.
   const [selectedBaseIndex, setSelectedBaseIndex] = useState(() => {
-    // If it's a single-rate item, it's pre-selected. Otherwise, null.
-    return item && item.rate && !item.rates ? -1 : null;
+    return item && typeof item.rate === "number" && !item.rates ? -1 : null;
   });
   const [selectedAddons, setSelectedAddons] = useState([]);
 
-  // This effect correctly re-prices addons when the scoop size changes.
+  // A single, robust source of truth for price options, whether from `rates` or `rate: []`
+  const priceOptions = useMemo(
+    () => item?.rates || (Array.isArray(item?.rate) ? item.rate : null),
+    [item]
+  );
+
   useEffect(() => {
     if (!item || selectedBaseIndex === null || selectedAddons.length === 0) {
       return;
     }
-
     const rePricedAddons = selectedAddons.map((addonInCart) => {
       const originalAddonDef = category.addons.find(
         (a) => a.id === addonInCart.id
@@ -51,18 +53,17 @@ export default function CustomizationDialog({
       }
       return addonInCart;
     });
-
     setSelectedAddons(rePricedAddons);
-  }, [selectedBaseIndex, category, item, selectedAddons.length]); // Refined dependencies
+  }, [selectedBaseIndex, category, item, selectedAddons.length]);
 
   const selectedRate = useMemo(() => {
     if (!item) return null;
     if (selectedBaseIndex === -1) return item.rate;
-    if (selectedBaseIndex !== null && item.rates) {
-      return item.rates[selectedBaseIndex];
+    if (selectedBaseIndex !== null && priceOptions) {
+      return priceOptions[selectedBaseIndex];
     }
     return null;
-  }, [selectedBaseIndex, item]);
+  }, [selectedBaseIndex, item, priceOptions]);
 
   const currentTotal = useMemo(() => {
     const basePrice = selectedRate || 0;
@@ -76,7 +77,6 @@ export default function CustomizationDialog({
   const handleAddonQuantity = (addon, change) => {
     const originalAddonDef = category.addons.find((a) => a.id === addon.id);
     if (!originalAddonDef) return;
-
     let resolvedAddonPrice;
     if (originalAddonDef.rates) {
       if (selectedBaseIndex !== null && selectedBaseIndex !== -1) {
@@ -87,7 +87,6 @@ export default function CustomizationDialog({
     } else {
       resolvedAddonPrice = originalAddonDef.rate;
     }
-
     setSelectedAddons((prev) => {
       const existing = prev.find((a) => a.id === addon.id);
       if (existing) {
@@ -115,11 +114,24 @@ export default function CustomizationDialog({
 
   const handleConfirmClick = () => {
     if (!item) return;
+
+    let finalName = item.name;
+    if (priceOptions && selectedBaseIndex !== null) {
+      // --- THIS IS THE FIX ---
+      // Generate a smart label: use 'scoops' if available, otherwise "Regular/Large" for 2 options, or fallback to "Option N"
+      const optionLabel =
+        category.scoops?.[selectedBaseIndex] ||
+        (priceOptions.length === 2
+          ? selectedBaseIndex === 0
+            ? "Regular"
+            : "Large"
+          : `Option ${selectedBaseIndex + 1}`);
+      finalName = `${item.name} (${optionLabel})`;
+    }
+
     const finalItem = {
       ...item,
-      name: item.rates
-        ? `${item.name} (${category.scoops[selectedBaseIndex]})`
-        : item.name,
+      name: finalName,
       rate: selectedRate,
     };
     onConfirm(finalItem, selectedAddons);
@@ -139,7 +151,7 @@ export default function CustomizationDialog({
         </DialogHeader>
 
         <div className="py-4 space-y-4">
-          {item.rates && (
+          {priceOptions && (
             <div>
               <Label className="font-semibold text-md">Select Size</Label>
               <RadioGroup
@@ -147,20 +159,29 @@ export default function CustomizationDialog({
                 onValueChange={(val) => setSelectedBaseIndex(parseInt(val, 10))}
                 className="mt-2 space-y-1"
               >
-                {item.rates.map((rate, index) => (
-                  <Label
-                    key={index}
-                    className="flex items-center justify-between p-3 border rounded-md has-[:checked]:border-primary cursor-pointer"
-                  >
-                    <span>
-                      {category.scoops?.[index] || `${index + 1} Scoop`}
-                    </span>
-                    <div className="flex items-center gap-4">
-                      <span className="font-bold">{formatCurrency(rate)}</span>
-                      <RadioGroupItem value={index.toString()} />
-                    </div>
-                  </Label>
-                ))}
+                {priceOptions.map((rate, index) => {
+                  const optionLabel =
+                    category.scoops?.[index] ||
+                    (priceOptions.length === 2
+                      ? index === 0
+                        ? "Regular"
+                        : "Large"
+                      : `Option ${index + 1}`);
+                  return (
+                    <Label
+                      key={index}
+                      className="flex items-center justify-between p-3 border rounded-md has-[:checked]:border-primary cursor-pointer"
+                    >
+                      <span>{optionLabel}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="font-bold">
+                          {formatCurrency(rate)}
+                        </span>
+                        <RadioGroupItem value={index.toString()} />
+                      </div>
+                    </Label>
+                  );
+                })}
               </RadioGroup>
             </div>
           )}
@@ -174,7 +195,6 @@ export default function CustomizationDialog({
                     (a) => a.id === addon.id
                   );
                   const quantity = selected ? selected.quantity : 0;
-
                   const originalAddonDef = category.addons.find(
                     (a) => a.id === addon.id
                   );

@@ -1,3 +1,5 @@
+// src/app/page.js
+
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
@@ -8,7 +10,7 @@ import OrderControls from "@/components/OrderControls";
 import CustomizationDialog from "@/components/CustomizationDialog";
 import { menuData } from "@/data/menu";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner"; // <-- Import toast directly from sonner
+import { toast } from "sonner";
 
 const GST_RATE = parseFloat(process.env.NEXT_PUBLIC_GST_RATE || 0);
 const SERVICE_CHARGE_RATE = parseFloat(
@@ -54,7 +56,9 @@ export default function HomePage() {
   });
 
   const handleItemClick = useCallback((item, category) => {
-    if (category.addons?.length > 0 || item.rates) {
+    // --- THIS IS THE FIX ---
+    // The condition is now smarter, checking for addons, a 'rates' array, OR if 'rate' itself is an array.
+    if (category.addons?.length > 0 || item.rates || Array.isArray(item.rate)) {
       setDialogState({ isOpen: true, item, category });
     } else {
       onAddItem(item, []);
@@ -76,7 +80,7 @@ export default function HomePage() {
       );
 
       if (existingItemIndex > -1) {
-        isNewItem = false; // It's an existing item
+        isNewItem = false;
         const updatedItems = [...prevItems];
         const existingItem = updatedItems[existingItemIndex];
         const newQuantity = existingItem.quantity + 1;
@@ -103,8 +107,6 @@ export default function HomePage() {
       }
     });
 
-    // --- THIS IS THE FIX ---
-    // Use the new, simpler sonner syntax
     if (isNewItem) {
       toast.success("Item Added", {
         description: `${baseItem.name} has been added to your order.`,

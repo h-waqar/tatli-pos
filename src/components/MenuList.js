@@ -17,7 +17,6 @@ export default function MenuList({ activeCategoryData, onItemClick }) {
     );
   }
 
-  // A single, universal function to render any item or deal
   const renderCard = (item) => (
     <Card
       key={item.id}
@@ -26,7 +25,6 @@ export default function MenuList({ activeCategoryData, onItemClick }) {
     >
       <div>
         <p className="font-bold">{item.name}</p>
-        {/* For deals, show the list of items inside */}
         {item.items && (
           <ul className="text-xs text-muted-foreground list-disc pl-4 mt-1">
             {item.items.map((dealItem, index) => (
@@ -36,20 +34,22 @@ export default function MenuList({ activeCategoryData, onItemClick }) {
         )}
       </div>
       <div className="flex justify-between items-center mt-2">
-        {/* Show a price if it exists */}
-        {item.rate && (
+        {/* --- THIS IS THE FIX --- */}
+        {/* Show price ONLY if 'rate' is a number. */}
+        {typeof item.rate === "number" && (
           <p className="text-lg font-extrabold text-primary">
             {formatCurrency(item.rate)}
           </p>
         )}
-        {/* For items with multiple rates (like ice cream), we don't show a price on the card */}
-        {item.rates && <p className="text-sm text-primary">Customize</p>}
+        {/* Show "Customize" if there are multiple price options, regardless of the property name (`rates` or `rate:[]`). */}
+        {(item.rates || Array.isArray(item.rate)) && (
+          <p className="text-sm text-primary">Customize</p>
+        )}
         <PlusCircle className="h-6 w-6 text-gray-400" />
       </div>
     </Card>
   );
 
-  // Combine regular items and deals into one list to render
   const allItems = [
     ...(activeCategoryData.items || []),
     ...(activeCategoryData.deals || []),
