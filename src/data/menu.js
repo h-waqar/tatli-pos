@@ -159,7 +159,7 @@ export const menuData = [
     icon: "🍗",
     items: [
       { id: 60, name: "6 Pc Wings", rate: 350 },
-      { id: 61, name: "12 Pc Wings", rate: 550 },
+      { id: 61, name: "12 Pc Wings", rate: 650 },
     ],
   },
   {
